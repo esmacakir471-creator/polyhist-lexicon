@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PolyHist Lexicon — 4‑Lang History & Culture Glossary</title>
+  <style>
+    /* Vintage theme: cream, dark-brown, gold, bordo */
+    :root{
+      --cream:#F7F1E5;
+      --dark:#4A3F35;
+      --gold:#D4AF37;
+      --bordo:#7A2E2E;
+      --paper: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect fill="%23F7F1E5" width="200" height="200"/></svg>');
+      --max-width:1100px;
+    }
+    html,body{height:100%;margin:0;font-family:Georgia, 'Times New Roman', serif;background:var(--cream);color:var(--dark)}
+    .wrap{max-width:var(--max-width);margin:28px auto;padding:28px;background:linear-gradient(180deg,rgba(255,255,255,0.6),rgba(255,255,255,0.3));box-shadow:0 6px 18px rgba(0,0,0,0.12);border-radius:8px}
+    header{display:flex;align-items:center;gap:18px}
+    .logo{display:flex;flex-direction:column}
+    h1{margin:0;font-size:28px;color:var(--dark)}
+    p.subtitle{margin:2px 0 0;font-size:13px;color:#5b4f47}
+    .top-right{margin-left:auto;text-align:right}
+    .controls{display:flex;gap:10px;align-items:center;margin-top:18px}
+    select,button,input.search{padding:8px 10px;border-radius:6px;border:1px solid rgba(0,0,0,0.12);background:white}
+    .search{min-width:240px}
+    .table{margin-top:18px;border-collapse:collapse;width:100%}
+    .table thead th{background:var(--dark);color:var(--cream);padding:10px;text-align:left;font-size:13px}
+    .table tbody td{padding:10px;border-bottom:1px dashed rgba(0,0,0,0.06);vertical-align:top}
+    .term{font-weight:700;color:var(--bordo);font-size:16px}
+    .trans{font-style:italic;color:#3f2f26}
+    .icon-btn{appearance:none;border:none;background:transparent;cursor:pointer;padding:6px;border-radius:6px}
+    .speaker{background:var(--gold);color:var(--dark);padding:6px 8px;border-radius:6px}
+    .edit{background:#fff;border:1px solid rgba(0,0,0,0.08);padding:6px 8px}
+    footer{margin-top:18px;font-size:12px;color:#5b4f47}
+    /* modal */
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.4);z-index:40}
+    .modal.open{display:flex}
+    .modal-card{background:var(--cream);padding:18px;border-radius:8px;max-width:820px;width:94%;box-shadow:0 10px 30px rgba(0,0,0,0.18)}
+    label{display:block;margin-top:8px;font-size:13px;color:var(--dark)}
+    textarea,input[type=text]{width:100%;padding:8px;border-radius:6px;border:1px solid rgba(0,0,0,0.08);background:white}
+    .row{display:flex;gap:10px}
+    .col{flex:1}
+    .small{width:140px}
+    .badge{background:var(--dark);color:var(--cream);padding:4px 8px;border-radius:6px;font-size:12px}
+    .controls .badge{background:transparent;color:var(--dark)}
+    .download{background:var(--dark);color:var(--cream);padding:8px 10px;border-radius:6px}
+    @media(max-width:720px){header{flex-direction:column;align-items:flex-start}.top-right{text-align:left;margin-left:0}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">
+        <h1>PolyHist Lexicon</h1>
+        <p class="subtitle">4‑language history & culture glossary — vintage theme</p>
+      </div>
+
+      <div class="top-right">
+        <div class="badge">Vintage • Editable • Offline</div>
+        <div style="margin-top:8px;font-size:12px;color:#5b4f47">Hint: click 🔊 to hear pronunciation</div>
+      </div>
+    </header>
+
+    <div class="controls">
+      <select id="langSelect" title="Display language">
+        <option value="en">English view</option>
+        <option value="tr">Türkçe görünüm</option>
+        <option value="fr">Français</option>
+        <option value="it">Italiano</option>
+      </select>
+
+      <input class="search" id="search" placeholder="Search terms, explanations or examples..." />
+
+      <button id="addBtn">+ Add entry</button>
+      <button id="exportBtn" class="download">Export JSON</button>
+    </div>
+
+    <table class="table" id="glossaryTable">
+      <thead>
+        <tr>
+          <th>Term</th>
+          <th style="width:380px">Translation / Explanation</th>
+          <th>Example</th>
+          <th style="width:140px">Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <footer>
+      Tip: Edit any entry → Save → changes are stored in this browser (localStorage). You can export JSON and upload that to GitHub later.
+    </footer>
+  </div>
+
+  <!-- Modal -->
+  <div id="modal" class="modal">
+    <div class="modal-card" role="dialog" aria-modal="true">
+      <h3 id="modalTitle">Edit entry</h3>
+      <div style="margin-top:6px;font-size:13px;color:#5b4f47">You can edit all fields for each language.</div>
+      <label>Term (English)</label>
+      <input id="term_en" type="text" />
+      <div class="row">
+        <div class="col">
+          <label>Turkish (Türkçe) — translation / short explanation</label>
+          <textarea id="tr_desc" rows="3"></textarea>
+        </div>
+        <div class="col">
+          <label>French (Français) — translation / short explanation</label>
+          <textarea id="fr_desc" rows="3"></textarea>
+        </div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <div class="col">
+          <label>Italian (Italiano) — translation / short explanation</label>
+          <textarea id="it_desc" rows="2"></textarea>
+        </div>
+        <div class="small">
+          <label>Pronounce language</label>
+          <select id="pronLang" style="width:100%">
+            <option value="en-US">English (US)</option>
+            <option value="tr-TR">Türkçe</option>
+            <option value="fr-FR">Français</option>
+            <option value="it-IT">Italiano</option>
+          </select>
+        </div>
+      </div>
+
+      <label style="margin-top:8px">Example sentence (you can supply one per language separated by | — format: en|tr|fr|it)</label>
+      <input id="exampleAll" type="text" placeholder="English example | Türkçe örnek | Exemple FR | Esempio IT" />
+
+      <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+        <button id="cancelBtn" class="icon-btn">Cancel</button>
+        <button id="saveBtn" class="icon-btn edit">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initial dataset: English + Turkish provided. FR/IT empty so you can edit later.
+    const initialData = [
+      {id:1, en:'Anachronism', tr:'Anakronizm', fr:'', it:'', example:''},
+      {id:2, en:'Historiography', tr:'Tarih yazımı', fr:'', it:'', example:''},
+      {id:3, en:'Primary source', tr:'Birincil kaynak', fr:'', it:'', example:''},
+      {id:4, en:'Secondary source', tr:'İkincil kaynak', fr:'', it:'', example:''},
+      {id:5, en:'Chronology', tr:'Kronoloji', fr:'', it:'', example:''},
+      {id:6, en:'Feudalism', tr:'Feodalizm', fr:'', it:'', example:''},
+      {id:7, en:'Imperialism', tr:'Emperyalizm', fr:'', it:'', example:''},
+      {id:8, en:'Colonialism', tr:'Sömürgecilik', fr:'', it:'', example:''},
+      {id:9, en:'Nation-state', tr:'Ulus-devlet', fr:'', it:'', example:''},
+      {id:10, en:'City-state', tr:'Şehir devleti', fr:'', it:'', example:''},
+      {id:11, en:'Dynasty', tr:'Hanedan', fr:'', it:'', example:''},
+      {id:12, en:'Sovereignty', tr:'Egemenlik', fr:'', it:'', example:''},
+      {id:13, en:'Regime', tr:'Rejim', fr:'', it:'', example:''},
+      {id:14, en:'Totalitarianism', tr:'Totalitarizm', fr:'', it:'', example:''},
+      {id:15, en:'Autocracy', tr:'Otokrasi', fr:'', it:'', example:''},
+      {id:16, en:'Bureaucracy', tr:'Bürokrasi', fr:'', it:'', example:''},
+      {id:17, en:'Aristocracy', tr:'Aristokrasi', fr:'', it:'', example:''},
+      {id:18, en:'Oligarchy', tr:'Oligarşi', fr:'', it:'', example:''},
+      {id:19, en:'Republic', tr:'Cumhuriyet', fr:'', it:'', example:''},
+      {id:20, en:'Monarchy', tr:'Monarşi', fr:'', it:'', example:''},
+      {id:21, en:'Succession', tr:'Ardıllık / taht mirası', fr:'', it:'', example:''},
+      {id:22, en:'Annexation', tr:'İlhak', fr:'', it:'', example:''},
+      {id:23, en:'Treaty', tr:'Antlaşma', fr:'', it:'', example:''},
+      {id:24, en:'Alliance', tr:'İttifak', fr:'', it:'', example:''},
+      {id:25, en:'Mobilization', tr:'Seferberlik', fr:'', it:'', example:''},
+      {id:26, en:'Insurrection', tr:'Ayaklanma', fr:'', it:'', example:''},
+      {id:27, en:'Rebellion', tr:'İsyan', fr:'', it:'', example:''},
+      {id:28, en:'Revolution', tr:'Devrim', fr:'', it:'', example:''},
+      {id:29, en:'Coup d\'état', tr:'Darbe', fr:'', it:'', example:''},
+      {id:30, en:'Armistice', tr:'Ateşkes', fr:'', it:'', example:''},
+      {id:31, en:'Occupation', tr:'İşgal', fr:'', it:'', example:''},
+      {id:32, en:'Demilitarization', tr:'Askersizleştirme', fr:'', it:'', example:''},
+      {id:33, en:'Protectorate', tr:'Himaye altındaki ülke', fr:'', it:'', example:''},
+      {id:34, en:'Mandate system', tr:'Manda sistemi', fr:'', it:'', example:''},
+      {id:35, en:'Confederation', tr:'Konfederasyon', fr:'', it:'', example:''},
+      {id:36, en:'Commonwealth', tr:'Milletler topluluğu', fr:'', it:'', example:''},
+      {id:37, en:'Diplomacy', tr:'Diplomasi', fr:'', it:'', example:''},
+      {id:38, en:'Doctrine', tr:'Doktrin', fr:'', it:'', example:''},
+      {id:39, en:'Ideology', tr:'İdeoloji', fr:'', it:'', example:''},
+      {id:40, en:'Industrialization', tr:'Sanayileşme', fr:'', it:'', example:''},
+      {id:41, en:'Urbanization', tr:'Kentleşme', fr:'', it:'', example:''},
+      {id:42, en:'Migration patterns', tr:'Göç modelleri', fr:'', it:'', example:''},
+      {id:43, en:'Demographics', tr:'Demografi', fr:'', it:'', example:''},
+      {id:44, en:'Patriarchy', tr:'Ataerkillik', fr:'', it:'', example:''},
+      {id:45, en:'Matriarchy', tr:'Anaerkillik', fr:'', it:'', example:''},
+      {id:46, en:'Cultural diffusion', tr:'Kültürel yayılma', fr:'', it:'', example:''},
+      {id:47, en:'Cultural assimilation', tr:'Kültürel asimilasyon', fr:'', it:'', example:''},
+      {id:48, en:'Cultural preservation', tr:'Kültürel koruma', fr:'', it:'', example:''},
+      {id:49, en:'Ethnocentrism', tr:'Etnosentrizm', fr:'', it:'', example:''},
+      {id:50, en:'Multiculturalism', tr:'Çokkültürlülük', fr:'', it:'', example:''},
+      {id:51, en:'Ritual', tr:'Ritüel', fr:'', it:'', example:''},
+      {id:52, en:'Mythology', tr:'Mitoloji', fr:'', it:'', example:''},
+      {id:53, en:'Folklore', tr:'Folklor', fr:'', it:'', example:''},
+      {id:54, en:'Heritage', tr:'Kültürel miras (somut/soyut)', fr:'', it:'', example:''},
+      {id:55, en:'Oral tradition', tr:'Sözlü gelenek', fr:'', it:'', example:''},
+      {id:56, en:'Archaeology', tr:'Arkeoloji', fr:'', it:'', example:''},
+      {id:57, en:'Excavation', tr:'Kazı', fr:'', it:'', example:''},
+      {id:58, en:'Artifact', tr:'Eser', fr:'', it:'', example:''},
+      {id:59, en:'Relic', tr:'Kutsal emanet', fr:'', it:'', example:''},
+      {id:60, en:'Inscription', tr:'Yazıt', fr:'', it:'', example:''},
+      {id:61, en:'Manuscript', tr:'El yazması', fr:'', it:'', example:''},
+      {id:62, en:'Iconography', tr:'İkonografi', fr:'', it:'', example:''},
+      {id:63, en:'Symbolism', tr:'Sembolizm', fr:'', it:'', example:''},
+      {id:64, en:'Patronage', tr:'Himaye / sanat sponsorluğu', fr:'', it:'', example:''},
+      {id:65, en:'Aesthetics', tr:'Estetik', fr:'', it:'', example:''},
+      {id:66, en:'Cultural paradigm', tr:'Kültürel paradigma', fr:'', it:'', example:''},
+      {id:67, en:'Social hierarchy', tr:'Sosyal hiyerarşi', fr:'', it:'', example:''},
+      {id:68, en:'Kinship system', tr:'Akrabalık sistemi', fr:'', it:'', example:''},
+      {id:69, en:'Tribal structure', tr:'Kabile yapısı', fr:'', it:'', example:''},
+      {id:70, en:'Nomadic lifestyle', tr:'Göçebe yaşam', fr:'', it:'', example:''},
+      {id:71, en:'Sedentary society', tr:'Yerleşik toplum', fr:'', it:'', example:''},
+      {id:72, en:'Cultural identity', tr:'Kültürel kimlik', fr:'', it:'', example:''},
+      {id:73, en:'Collective memory', tr:'Kolektif hafıza', fr:'', it:'', example:''},
+      {id:74, en:'Cultural appropriation', tr:'Kültürel ödünç alma / sömürü', fr:'', it:'', example:''},
+      {id:75, en:'Syncretism', tr:'Sentezcilik / inançların kaynaşması', fr:'', it:'', example:''},
+      {id:76, en:'Secularism', tr:'Sekülarizm', fr:'', it:'', example:''},
+      {id:77, en:'Theocracy', tr:'Teokrasi', fr:'', it:'', example:''},
+      {id:78, en:'Orthodoxy', tr:'Ortodoksi', fr:'', it:'', example:''},
+      {id:79, en:'Pilgrimage', tr:'Hac yolculuğu', fr:'', it:'', example:''},
+      {id:80, en:'Pantheon', tr:'Panteon', fr:'', it:'', example:''},
+      {id:81, en:'Deity', tr:'İlah', fr:'', it:'', example:''},
+      {id:82, en:'Canon', tr:'Kanon (dini/edebi)', fr:'', it:'', example:''},
+      {id:83, en:'Renaissance', tr:'Rönesans', fr:'', it:'', example:''},
+      {id:84, en:'Enlightenment', tr:'Aydınlanma Çağı', fr:'', it:'', example:''},
+      {id:85, en:'Romanticism', tr:'Romantizm', fr:'', it:'', example:''},
+      {id:86, en:'Modernism', tr:'Modernizm', fr:'', it:'', example:''},
+      {id:87, en:'Postmodernism', tr:'Postmodernizm', fr:'', it:'', example:''},
+      {id:88, en:'Humanism', tr:'Hümanizm', fr:'', it:'', example:''},
+      {id:89, en:'Cultural relativism', tr:'Kültürel görelilik', fr:'', it:'', example:''},
+      {id:90, en:'Social stratification', tr:'Toplumsal tabakalaşma', fr:'', it:'', example:''},
+      {id:91, en:'Collectivist culture', tr:'Kolektivist kültür', fr:'', it:'', example:''},
+      {id:92, en:'Individualist culture', tr:'Bireyci kültür', fr:'', it:'', example:''},
+      {id:93, en:'Diaspora', tr:'Diaspora', fr:'', it:'', example:''},
+      {id:94, en:'Cultural revival', tr:'Kültürel canlanma', fr:'', it:'', example:''},
+      {id:95, en:'Transculturation', tr:'Kültürlerarası dönüşüm', fr:'', it:'', example:''},
+      {id:96, en:'Intercultural competence', tr:'Kültürlerarası yeterlilik', fr:'', it:'', example:''},
+      {id:97, en:'Cultural landscape', tr:'Kültürel peyzaj', fr:'', it:'', example:''},
+      {id:98, en:'Worldview', tr:'Dünya görüşü', fr:'', it:'', example:''},
+      {id:99, en:'Ethnography', tr:'Etnografi', fr:'', it:'', example:''},
+      {id:100, en:'Canon (again)', tr:'Kanon', fr:'', it:'', example:''}
+    ];
+
+    // storage key
+    const STORAGE_KEY='polyhist_glossary_v1';
+
+    // load or init
+    function loadData(){
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){try{return JSON.parse(raw)}catch(e){return initialData}}
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(initialData));
+      return initialData;
+    }
+
+    let data = loadData();
+    const tbody = document.querySelector('#glossaryTable tbody');
+    const langSelect = document.getElementById('langSelect');
+    const searchInput = document.getElementById('search');
+
+    function render(filter=''){
+      tbody.innerHTML='';
+      const viewLang = langSelect.value;
+      const q = filter.trim().toLowerCase();
+      data.forEach(item=>{
+        const en = item.en||'';
+        const tr = item.tr||'';
+        const fr = item.fr||'';
+        const it = item.it||'';
+        const example = item.example||'';
+        const textToSearch = (en+' '+tr+' '+fr+' '+it+' '+example).toLowerCase();
+        if(q && !textToSearch.includes(q)) return;
+
+        const trText = (viewLang==='en')? item.en : (viewLang==='tr')? item.tr || item.en : (viewLang==='fr')? item.fr || item.en : item.it || item.en;
+
+        const trCellHtml = `<div class="trans">${escapeHtml(trText)}</div>`;
+        const exampleCell = escapeHtml(example || '—');
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td><div class="term">${escapeHtml(item.en)}</div><div style="font-size:12px;color:#6b5b4f">${escapeHtml(item.tr)}</div></td>
+          <td>${trCellHtml}</td>
+          <td>${exampleCell}</td>
+          <td>
+            <button class="icon-btn speaker" data-id="${item.id}" title="Play pronunciation">🔊</button>
+            <button class="icon-btn edit" data-id="${item.id}" title="Edit">✏️</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      // attach listeners
+      document.querySelectorAll('.speaker').forEach(btn=>btn.onclick=onSpeak);
+      document.querySelectorAll('.edit').forEach(btn=>btn.onclick=onEdit);
+    }
+
+    function escapeHtml(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+    function onSpeak(e){
+      const id = Number(e.currentTarget.dataset.id);
+      const item = data.find(x=>x.id===id);
+      if(!item) return;
+      const pron = document.getElementById('pronLang').value || 'en-US';
+      // speak: prefer the view language if translation exists
+      const viewLang = langSelect.value;
+      let text='';
+      if(viewLang==='en') text = item.en;
+      else if(viewLang==='tr') text = item.tr || item.en;
+      else if(viewLang==='fr') text = item.fr || item.en;
+      else text = item.it || item.en;
+
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = pron;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utter);
+    }
+
+    // modal editing
+    const modal = document.getElementById('modal');
+    const term_en = document.getElementById('term_en');
+    const tr_desc = document.getElementById('tr_desc');
+    const fr_desc = document.getElementById('fr_desc');
+    const it_desc = document.getElementById('it_desc');
+    const exampleAll = document.getElementById('exampleAll');
+    const saveBtn = document.getElementById('saveBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    let editingId = null;
+
+    function onEdit(e){
+      const id = Number(e.currentTarget.dataset.id);
+      editingId = id;
+      const item = data.find(x=>x.id===id);
+      if(!item) return;
+      term_en.value = item.en || '';
+      tr_desc.value = item.tr || '';
+      fr_desc.value = item.fr || '';
+      it_desc.value = item.it || '';
+      exampleAll.value = item.example || '';
+      modal.classList.add('open');
+      document.getElementById('modalTitle').textContent = 'Edit entry — ID '+id;
+    }
+
+    cancelBtn.onclick = ()=>{modal.classList.remove('open');editingId=null}
+
+    saveBtn.onclick = ()=>{
+      if(!editingId) return;
+      const item = data.find(x=>x.id===editingId);
+      item.en = term_en.value.trim();
+      item.tr = tr_desc.value.trim();
+      item.fr = fr_desc.value.trim();
+      item.it = it_desc.value.trim();
+      item.example = exampleAll.value.trim();
+      persist();
+      modal.classList.remove('open');
+      render(searchInput.value);
+    }
+
+    function persist(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+
+    // add new
+    document.getElementById('addBtn').addEventListener('click',()=>{
+      const newId = (data.length?Math.max(...data.map(d=>d.id)):0)+1;
+      const newItem = {id:newId,en:'New Term',tr:'',fr:'',it:'',example:''};
+      data.unshift(newItem);
+      persist();
+      render();
+      // open edit for quick fill
+      setTimeout(()=>document.querySelector('[data-id="'+newId+'"]').click(),80);
+    });
+
+    // export
+    document.getElementById('exportBtn').addEventListener('click',()=>{
+      const blob = new Blob([JSON.stringify(data, null, 2)],{type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href=url; a.download='polyhist_glossary.json'; a.click(); URL.revokeObjectURL(url);
+    });
+
+    // search + render
+    searchInput.addEventListener('input',()=>render(searchInput.value));
+    langSelect.addEventListener('change',()=>render(searchInput.value));
+
+    // click on row edit when newly added
+    function attachNewClick(){
+      // handled via render
+    }
+
+    // init
+    render();
+
+    // small helper: if user wants to reset to initial sample
+    window.resetToSample = function(){ data = initialData; persist(); render(); }
+  </script>
+</body>
+</html>
